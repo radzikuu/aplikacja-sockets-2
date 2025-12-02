@@ -1,40 +1,18 @@
-# Git
-.git
-.gitignore
-.gitattributes
-
-# Python
-__pycache__
+__pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
-*.so
-
-# Virtual environments
+*.egg-info/
+.env
+.venv
 venv/
-env/
-ENV/
-
-# IDEs
-.vscode
-.idea
-*.swp
-
-# Testing
-.pytest_cache
+*.log
+.pytest_cache/
 .coverage
-*.cover
-
-# Documentation
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.git
+.gitignore
 README.md
-docs/
-
-# Received files
-received_tcp_*
-received_udp_*
-
-# Docker
-Dockerfile
-.dockerignore
-docker-compose*.yml

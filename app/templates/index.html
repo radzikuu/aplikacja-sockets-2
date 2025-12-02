@@ -1,116 +1,924 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <title>Network Protocol Manager</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Protocol Suite - TCP/UDP Docker</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
-        button { padding: 10px; margin: 5px; }
-        .status { padding: 10px; margin: 10px 0; }
-        .active { background-color: #4CAF50; color: white; }
-        .inactive { background-color: #f44336; color: white; }
-        input, select { padding: 8px; margin: 5px; }
+        :root {
+            --color-primary: #2d7a8a;
+            --color-secondary: #5eb3ba;
+            --color-success: #28a745;
+            --color-error: #dc3545;
+            --color-warning: #ffc107;
+            --color-bg: #f5f7fa;
+            --color-surface: #ffffff;
+            --color-text: #333;
+            --color-border: #ddd;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--color-primary);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+        }
+
+        header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--color-surface);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--color-secondary);
+        }
+
+        .card h2 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(45, 122, 138, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #255868;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 122, 138, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--color-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4da3ab;
+        }
+
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: var(--color-error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        .status.connected {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--color-success);
+            border: 1px solid var(--color-success);
+        }
+
+        .status.disconnected {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--color-error);
+            border: 1px solid var(--color-error);
+        }
+
+        .status.waiting {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ff9800;
+            border: 1px solid #ff9800;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status.connected .status-indicator {
+            background: var(--color-success);
+        }
+
+        .status.disconnected .status-indicator {
+            background: var(--color-error);
+            animation: none;
+        }
+
+        .status.waiting .status-indicator {
+            background: #ff9800;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--color-border);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+        }
+
+        .log-entry.error {
+            color: #ff6b6b;
+        }
+
+        .log-entry.warning {
+            color: #ffd700;
+        }
+
+        .log-entry.success {
+            color: #90ee90;
+        }
+
+        .log-entry.info {
+            color: #87ceeb;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .protocol-info {
+            background: rgba(45, 122, 138, 0.05);
+            border: 1px solid var(--color-secondary);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .protocol-info h4 {
+            margin-top: 0;
+            color: var(--color-primary);
+        }
+
+        .protocol-info p {
+            margin: 5px 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: var(--color-bg);
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid var(--color-secondary);
+        }
+
+        .stat-box .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: rgba(0, 150, 200, 0.1);
+            border-color: #0096c8;
+            color: #004d73;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            border-color: var(--color-success);
+            color: #155724;
+        }
+
+        .alert-error {
+            background: rgba(220, 53, 69, 0.1);
+            border-color: var(--color-error);
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Network Protocol Manager</h1>
-        
-        <div class="section">
-            <h2>Connection Status</h2>
-            <div id="status"></div>
-            <button onclick="checkStatus()">Refresh Status</button>
-            <button onclick="autoReconnect()">Auto Reconnect</button>
+        <header>
+            <h1>🌐 Network Protocol Suite - Docker Edition</h1>
+            <p>Aplikacja edukacyjna: TCP/UDP Client-Server z własnym protokołem (CRC32, Custom Frames)</p>
+        </header>
+
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('client')">Klient</button>
+            <button class="tab-btn" onclick="switchTab('server')">Serwer</button>
+            <button class="tab-btn" onclick="switchTab('tester')">Tester Obciążenia</button>
+            <button class="tab-btn" onclick="switchTab('discovery')">Odkrywanie Hostów</button>
         </div>
-        
-        <div class="section">
-            <h2>Discover Hosts</h2>
-            <button onclick="discoverHosts()">Scan Network</button>
-            <div id="hosts"></div>
+
+        <!-- TAB 1: KLIENT -->
+        <div id="client" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h2>TCP Klient</h2>
+                    <div class="form-group">
+                        <label>Adres hosta (IP lub nazwa):</label>
+                        <input type="text" id="tcpHost" value="localhost" placeholder="np. app">
+                    </div>
+                    <div class="form-group">
+                        <label>Port:</label>
+                        <input type="number" id="tcpPort" value="6000" min="1" max="65535">
+                    </div>
+                    <div class="form-group">
+                        <label>Wiadomość:</label>
+                        <textarea id="tcpMessage" placeholder="Wpisz wiadomość...">Cześć z klienta TCP!</textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="connectTCP()">Połącz</button>
+                        <button class="btn btn-secondary" onclick="sendTCP()">Wyślij</button>
+                        <button class="btn btn-danger" onclick="disconnectTCP()">Rozłącz</button>
+                    </div>
+                    <div id="tcpStatus" class="status disconnected">
+                        <span class="status-indicator"></span>Rozłączony
+                    </div>
+                    <div class="protocol-info">
+                        <h4>Format ramki TCP (0xCAFEBABE)</h4>
+                        <p>Nagłówek: 20B (Magic + Type + Length + CRC32 + Timestamp + Sequence)</p>
+                    </div>
+                    <div id="tcpLog" class="log-container">
+                        <div class="log-entry info">[INFO] Gotowy...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>UDP Klient</h2>
+                    <div class="form-group">
+                        <label>Adres hosta:</label>
+                        <input type="text" id="udpHost" value="localhost" placeholder="np. app">
+                    </div>
+                    <div class="form-group">
+                        <label>Port:</label>
+                        <input type="number" id="udpPort" value="5001" min="1" max="65535">
+                    </div>
+                    <div class="form-group">
+                        <label>Wiadomość:</label>
+                        <textarea id="udpMessage" placeholder="Wpisz wiadomość...">Cześć z UDP!</textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="sendUDP()">Wyślij wiadomość</button>
+                    </div>
+                    <div class="protocol-info">
+                        <h4>Format ramki UDP (0xDEADBEEF)</h4>
+                        <p>Nagłówek: 16B (Magic + Type + Length + CRC32 + PacketID + Total + Timestamp)</p>
+                    </div>
+                    <div id="udpLog" class="log-container">
+                        <div class="log-entry info">[INFO] Gotowy...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats" id="clientStats">
+                <div class="stat-box">
+                    <div class="label">Wysłanych bajtów</div>
+                    <div class="value" id="bytesSent">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Odebranych bajtów</div>
+                    <div class="value" id="bytesReceived">0</div>
+                </div>
+            </div>
         </div>
-        
-        <div class="section">
-            <h2>Send Data</h2>
-            <input type="text" id="host" placeholder="Host" value="localhost">
-            <input type="number" id="port" placeholder="Port" value="5000">
-            <select id="protocol">
-                <option value="TCP">TCP</option>
-                <option value="UDP">UDP</option>
-            </select>
-            <br>
-            <input type="text" id="text" placeholder="Text message">
-            <button onclick="sendText()">Send Text (TCP)</button>
-            <br>
-            <input type="file" id="file">
-            <button onclick="sendFile()">Send File</button>
+
+        <!-- TAB 2: SERWER -->
+        <div id="server" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h2>TCP Serwer</h2>
+                    <div class="form-group">
+                        <label>Port:</label>
+                        <input type="number" id="tcpServerPort" value="6000" min="1" max="65535">
+                    </div>
+                    <div class="form-group">
+                        <label>Max klientów:</label>
+                        <input type="number" id="tcpMaxClients" value="10" min="1" max="100">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="startTCPServer()">Start</button>
+                        <button class="btn btn-danger" onclick="stopTCPServer()">Stop</button>
+                    </div>
+                    <div id="tcpServerStatus" class="status disconnected">
+                        <span class="status-indicator"></span>Wyłączony
+                    </div>
+                    <div id="tcpServerLog" class="log-container">
+                        <div class="log-entry info">[INFO] Serwer TCP gotowy...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>UDP Serwer</h2>
+                    <div class="form-group">
+                        <label>Port:</label>
+                        <input type="number" id="udpServerPort" value="5001" min="1" max="65535">
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="startUDPServer()">Start</button>
+                        <button class="btn btn-danger" onclick="stopUDPServer()">Stop</button>
+                    </div>
+                    <div id="udpServerStatus" class="status disconnected">
+                        <span class="status-indicator"></span>Wyłączony
+                    </div>
+                    <div id="udpServerLog" class="log-container">
+                        <div class="log-entry info">[INFO] Serwer UDP gotowy...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="label">Połączeni klienci (TCP)</div>
+                    <div class="value" id="connectedClients">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Odebrane pakiety (UDP)</div>
+                    <div class="value" id="udpPacketsReceived">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: TESTER OBCIĄŻENIA -->
+        <div id="tester" class="tab-content">
+            <div class="card">
+                <h2>Tester Obciążenia TCP</h2>
+                <div class="alert alert-info">
+                    <strong>ℹ️</strong> Narzędzie edukacyjne do testów obciążeniowych w kontrolowanych środowiskach.
+                </div>
+
+                <div class="grid">
+                    <div>
+                        <div class="form-group">
+                            <label>Host:</label>
+                            <input type="text" id="targetHost" value="localhost">
+                        </div>
+                        <div class="form-group">
+                            <label>Port:</label>
+                            <input type="number" id="targetPort" value="6000">
+                        </div>
+                        <div class="form-group">
+                            <label>Wątki:</label>
+                            <input type="number" id="numThreads" value="5" min="1" max="100">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Pakiety/wątek:</label>
+                            <input type="number" id="packetsPerThread" value="10" min="1" max="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Rozmiar pakietu (B):</label>
+                            <input type="number" id="packetSize" value="1024" min="64" max="65535">
+                        </div>
+                        <div class="form-group">
+                            <label>Tryb:</label>
+                            <select id="testType">
+                                <option value="normal">Normalny</option>
+                                <option value="flood">Flood</option>
+                                <option value="slowloris">SlowLoris</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="startLoadTest()">Rozpocznij</button>
+                    <button class="btn btn-danger" onclick="stopLoadTest()">Zatrzymaj</button>
+                </div>
+
+                <div id="testerStatus" class="status disconnected">
+                    <span class="status-indicator"></span>Gotowy
+                </div>
+
+                <div class="stats" id="testerStats">
+                    <div class="stat-box">
+                        <div class="label">Wysłane pakiety</div>
+                        <div class="value" id="testPacketsSent">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Udane połączenia</div>
+                        <div class="value" id="successfulConnections">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Błędy</div>
+                        <div class="value" id="testErrors">0</div>
+                    </div>
+                </div>
+
+                <div id="testerLog" class="log-container">
+                    <div class="log-entry info">[INFO] Tester gotowy...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ODKRYWANIE HOSTÓW -->
+        <div id="discovery" class="tab-content">
+            <div class="card">
+                <h2>Odkrywanie Hostów Docker</h2>
+                <div class="alert alert-info">
+                    <strong>ℹ️</strong> Skanuje sieć w poszukiwaniu dostępnych usług.
+                </div>
+
+                <div class="form-group">
+                    <label>Zakres CIDR:</label>
+                    <input type="text" id="scanRange" value="172.17.0.0/16">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="discoverHosts()">Skanuj</button>
+                </div>
+
+                <div id="discoveryStatus" class="status disconnected">
+                    <span class="status-indicator"></span>Gotowy
+                </div>
+
+                <div id="discoveryLog" class="log-container">
+                    <div class="log-entry info">[INFO] Gotowy...</div>
+                </div>
+            </div>
         </div>
     </div>
-    
+
     <script>
-        async function checkStatus() {
-            const response = await fetch('/api/status');
-            const data = await response.json();
-            const statusDiv = document.getElementById('status');
-            
-            let html = '<h3>Active Connections:</h3>';
-            for (let [addr, info] of Object.entries(data.connections)) {
-                const statusClass = info.active ? 'active' : 'inactive';
-                html += `<div class="status ${statusClass}">
-                    ${addr} - ${info.type} - ${info.active ? 'Active' : 'Inactive'}
-                </div>`;
+        const API_BASE = '/api';
+        const STATE = {
+            tcp_connected: false,
+            tcp_client: null
+        };
+
+        // ==================== UTILITIES ====================
+        function log(elementId, message, type = 'info') {
+            const logDiv = document.getElementById(elementId);
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            while (logDiv.children.length > 100) {
+                logDiv.removeChild(logDiv.firstChild);
             }
-            statusDiv.innerHTML = html;
         }
-        
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ==================== TCP CLIENT ====================
+        async function connectTCP() {
+            const host = document.getElementById('tcpHost').value;
+            const port = document.getElementById('tcpPort').value;
+
+            log('tcpLog', `Łączenie z ${host}:${port}...`, 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/tcp-client/connect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host, port: parseInt(port) })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    STATE.tcp_connected = true;
+                    document.getElementById('tcpStatus').className = 'status connected';
+                    document.getElementById('tcpStatus').innerHTML = '<span class="status-indicator"></span>Połączony';
+                    log('tcpLog', `✓ ${data.message}`, 'success');
+                } else {
+                    log('tcpLog', `✗ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log('tcpLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendTCP() {
+            if (!STATE.tcp_connected) {
+                log('tcpLog', '✗ Brak połączenia', 'error');
+                return;
+            }
+
+            const message = document.getElementById('tcpMessage').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/tcp-client/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    log('tcpLog', `✓ Wysłano: "${message}"`, 'success');
+                    updateTCPStats();
+                } else {
+                    log('tcpLog', `✗ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log('tcpLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        async function disconnectTCP() {
+            try {
+                const response = await fetch(`${API_BASE}/tcp-client/disconnect`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                STATE.tcp_connected = false;
+                document.getElementById('tcpStatus').className = 'status disconnected';
+                document.getElementById('tcpStatus').innerHTML = '<span class="status-indicator"></span>Rozłączony';
+                log('tcpLog', 'Rozłączono', 'info');
+            } catch (error) {
+                log('tcpLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateTCPStats() {
+            try {
+                const response = await fetch(`${API_BASE}/tcp-client/stats`);
+                const stats = await response.json();
+                document.getElementById('bytesSent').textContent = stats.bytes_sent || 0;
+                document.getElementById('bytesReceived').textContent = stats.bytes_received || 0;
+            } catch (error) {
+                console.error('Error updating TCP stats:', error);
+            }
+        }
+
+        // ==================== UDP CLIENT ====================
+        async function sendUDP() {
+            const host = document.getElementById('udpHost').value;
+            const port = document.getElementById('udpPort').value;
+            const message = document.getElementById('udpMessage').value;
+
+            log('udpLog', `Wysyłanie UDP do ${host}:${port}...`, 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/udp-client/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host, port: parseInt(port), message })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    log('udpLog', `✓ Wysłano UDP (${data.stats.bytes_sent} B)`, 'success');
+                } else {
+                    log('udpLog', `✗ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log('udpLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== TCP SERVER ====================
+        async function startTCPServer() {
+            const port = parseInt(document.getElementById('tcpServerPort').value);
+            const max_clients = parseInt(document.getElementById('tcpMaxClients').value);
+
+            log('tcpServerLog', 'Uruchamianie TCP Serwera...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/tcp-server/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host: '0.0.0.0', port, max_clients })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('tcpServerStatus').className = 'status connected';
+                    document.getElementById('tcpServerStatus').innerHTML = '<span class="status-indicator"></span>Nasłuchuje';
+                    log('tcpServerLog', `✓ ${data.message}`, 'success');
+                } else {
+                    log('tcpServerLog', `✗ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log('tcpServerLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopTCPServer() {
+            try {
+                const response = await fetch(`${API_BASE}/tcp-server/stop`, { method: 'POST' });
+                const data = await response.json();
+
+                document.getElementById('tcpServerStatus').className = 'status disconnected';
+                document.getElementById('tcpServerStatus').innerHTML = '<span class="status-indicator"></span>Wyłączony';
+                log('tcpServerLog', data.message, 'warning');
+            } catch (error) {
+                log('tcpServerLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== UDP SERVER ====================
+        async function startUDPServer() {
+            const port = parseInt(document.getElementById('udpServerPort').value);
+
+            log('udpServerLog', 'Uruchamianie UDP Serwera...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/udp-server/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host: '0.0.0.0', port, buffer_size: 65535 })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('udpServerStatus').className = 'status connected';
+                    document.getElementById('udpServerStatus').innerHTML = '<span class="status-indicator"></span>Nasłuchuje';
+                    log('udpServerLog', `✓ ${data.message}`, 'success');
+                } else {
+                    log('udpServerLog', `✗ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log('udpServerLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopUDPServer() {
+            try {
+                const response = await fetch(`${API_BASE}/udp-server/stop`, { method: 'POST' });
+                const data = await response.json();
+
+                document.getElementById('udpServerStatus').className = 'status disconnected';
+                document.getElementById('udpServerStatus').innerHTML = '<span class="status-indicator"></span>Wyłączony';
+                log('udpServerLog', data.message, 'warning');
+            } catch (error) {
+                log('udpServerLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== LOAD TESTER ====================
+        async function startLoadTest() {
+            const host = document.getElementById('targetHost').value;
+            const port = parseInt(document.getElementById('targetPort').value);
+            const mode = document.getElementById('testType').value;
+            const num_threads = parseInt(document.getElementById('numThreads').value);
+            const packets_per_thread = parseInt(document.getElementById('packetsPerThread').value);
+            const packet_size = parseInt(document.getElementById('packetSize').value);
+
+            log('testerLog', `Rozpoczęcie testu: ${mode}`, 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/load-tester/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host, port, mode, num_threads, packets_per_thread, packet_size,
+                        packet_delay: 10
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('testerStatus').className = 'status waiting';
+                    document.getElementById('testerStatus').innerHTML = '<span class="status-indicator"></span>Test w toku...';
+                    log('testerLog', `✓ ${data.message}`, 'success');
+                    
+                    // Update stats periodically
+                    updateTesterStats();
+                } else {
+                    log('testerLog', `✗ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log('testerLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateTesterStats() {
+            try {
+                const response = await fetch(`${API_BASE}/load-tester/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('testPacketsSent').textContent = stats.packets_sent || 0;
+                document.getElementById('successfulConnections').textContent = stats.successful_connections || 0;
+                document.getElementById('testErrors').textContent = stats.errors || 0;
+            } catch (error) {
+                console.error('Error updating tester stats:', error);
+            }
+        }
+
+        async function stopLoadTest() {
+            try {
+                const response = await fetch(`${API_BASE}/load-tester/stop`, { method: 'POST' });
+                const data = await response.json();
+
+                document.getElementById('testerStatus').className = 'status connected';
+                document.getElementById('testerStatus').innerHTML = '<span class="status-indicator"></span>Test zakończony';
+                log('testerLog', data.message, 'warning');
+            } catch (error) {
+                log('testerLog', `✗ Błąd: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== HOST DISCOVERY ====================
         async function discoverHosts() {
-            const response = await fetch('/api/discover');
-            const data = await response.json();
-            const hostsDiv = document.getElementById('hosts');
-            
-            hostsDiv.innerHTML = '<h3>Discovered Hosts:</h3>' + 
-                data.hosts.map(h => `<div>${h}</div>`).join('');
+            const scanRange = document.getElementById('scanRange').value;
+
+            log('discoveryLog', `Skanowanie zakresu: ${scanRange}...`, 'info');
+            document.getElementById('discoveryStatus').className = 'status waiting';
+            document.getElementById('discoveryStatus').innerHTML = '<span class="status-indicator"></span>Skanowanie...';
+
+            try {
+                const response = await fetch(`${API_BASE}/discovery/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cidr: scanRange })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    log('discoveryLog', `✓ Znaleziono ${data.hosts.length} hostów`, 'success');
+                    document.getElementById('discoveryStatus').className = 'status connected';
+                    document.getElementById('discoveryStatus').innerHTML = '<span class="status-indicator"></span>Gotowy';
+                } else {
+                    log('discoveryLog', '✗ Błąd skanowania', 'error');
+                }
+            } catch (error) {
+                log('discoveryLog', `✗ Błąd: ${error.message}`, 'error');
+            }
         }
-        
-        async function sendText() {
-            const formData = new FormData();
-            formData.append('host', document.getElementById('host').value);
-            formData.append('port', document.getElementById('port').value);
-            formData.append('protocol', document.getElementById('protocol').value);
-            formData.append('text', document.getElementById('text').value);
-            
-            const response = await fetch('/api/send', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            alert(result.success ? 'Sent!' : 'Failed');
-        }
-        
-        async function sendFile() {
-            const formData = new FormData();
-            formData.append('host', document.getElementById('host').value);
-            formData.append('port', document.getElementById('port').value);
-            formData.append('protocol', document.getElementById('protocol').value);
-            formData.append('file', document.getElementById('file').files[0]);
-            
-            const response = await fetch('/api/send', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            alert(result.success ? 'File sent!' : 'Failed');
-        }
-        
-        function autoReconnect() {
-            alert('Auto-reconnect is enabled by default in the client');
-        }
-        
-        // Auto-refresh status every 5 seconds
-        setInterval(checkStatus, 5000);
-        checkStatus();
+
+        // ==================== INIT ====================
+        setInterval(() => {
+            updateTCPStats();
+            updateTesterStats();
+        }, 2000);
     </script>
 </body>
 </html>

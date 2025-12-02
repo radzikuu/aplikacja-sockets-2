@@ -1,42 +1,33 @@
 version: '3.8'
 
 services:
-  node1:
-    build: ./app
-    container_name: protocol_node1
+  # Główna aplikacja Network Protocol Suite
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: network-suite
     ports:
-      - "8081:8080"
-      - "5000:5000"
-      - "5001:5001"
+      - "5000:5000"  # Flask web
+      - "5001:5001"  # UDP server
+      - "6000:6000"  # TCP server (separate from Flask port)
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./app:/app
     networks:
-      protocol_net:
-        ipv4_address: 172.20.0.10
-
-  node2:
-    build: ./app
-    container_name: protocol_node2
-    ports:
-      - "8082:8080"
-      - "5002:5000"
-      - "5003:5001"
-    networks:
-      protocol_net:
-        ipv4_address: 172.20.0.11
-
-  node3:
-    build: ./app
-    container_name: protocol_node3
-    ports:
-      - "8083:8080"
-      - "5004:5000"
-      - "5005:5001"
-    networks:
-      protocol_net:
-        ipv4_address: 172.20.0.12
+      - docker-net
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
-  protocol_net:
+  docker-net:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.25.0.0/16

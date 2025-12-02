@@ -1,48 +1,15 @@
-# Python
+.DS_Store
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
 *.pyc
 *.pyo
-*.pyd
-
-# Virtual Environment
-env/
-venv/
-ENV/
+*.egg-info/
+.env
 .venv
-
-# IDEs
-.vscode/
+venv/
+*.log
+.pytest_cache/
+.coverage
 .idea/
 *.swp
 *.swo
 *~
-
-# Docker
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
-.pytest_cache/
-.coverage
-.tox/
-htmlcov/
-*.cover
-
-# Received files (z Twojej aplikacji)
-received_tcp_*
-received_udp_*
-
-# Temporary files
-/tmp/
-*.tmp
-
-# Environment variables
-.env
-.env.local
