@@ -386,6 +386,9 @@
                         <input type="number" id="tcpPort" value="6000" min="1" max="65535">
                     </div>
                     <div class="form-group">
+                        <label><input type="checkbox" id="tcpAutoReconnect" checked> Auto Reconnect</label>
+                    </div>
+                    <div class="form-group">
                         <label>Wiadomość:</label>
                         <textarea id="tcpMessage" placeholder="Wpisz wiadomość...">Cześć z klienta TCP!</textarea>
                     </div>
@@ -417,12 +420,70 @@
                         <input type="number" id="udpPort" value="5001" min="1" max="65535">
                     </div>
                     <div class="form-group">
+                        <label>Tryb wysyłania UDP:</label>
+                        <select id="udpMode">
+                            <option value="unicast">Unicast</option>
+                            <option value="multicast">Multicast</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Wybierz plik (audio/bin):</label>
+                        <input type="file" id="udpFileInput" accept="audio/*,application/octet-stream">
+                    </div>
+                    <div class="form-group">
                         <label>Wiadomość:</label>
                         <textarea id="udpMessage" placeholder="Wpisz wiadomość...">Cześć z UDP!</textarea>
                     </div>
                     <div class="btn-group">
                         <button class="btn btn-primary" onclick="sendUDP()">Wyślij wiadomość</button>
+                        <button class="btn btn-secondary" onclick="sendUDPFile()">Wyślij plik</button>
                     </div>
+                        // ==================== UDP FILE TRANSFER ====================
+                        async function sendUDPFile() {
+                            const host = document.getElementById('udpHost').value;
+                            const port = parseInt(document.getElementById('udpPort').value);
+                            const mode = document.getElementById('udpMode').value;
+                            const fileInput = document.getElementById('udpFileInput');
+
+                            if (!fileInput.files.length) {
+                                log('udpLog', '✗ Wybierz plik najpierw', 'error');
+                                return;
+                            }
+
+                            const file = fileInput.files[0];
+                            const reader = new FileReader();
+                            reader.onload = async (e) => {
+                                const arrayBuffer = e.target.result;
+                                // convert to base64
+                                let binary = '';
+                                const bytes = new Uint8Array(arrayBuffer);
+                                const chunkSize = 0x8000;
+                                for (let i = 0; i < bytes.length; i += chunkSize) {
+                                    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+                                }
+                                const base64 = btoa(binary);
+
+                                log('udpLog', `Wysyłanie pliku ${file.name} (${file.size} B) do ${host}:${port} (${mode})...`, 'info');
+
+                                try {
+                                    const response = await fetch(`${API_BASE}/udp-client/send-file`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ host, port, file_data: base64, mode })
+                                    });
+
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        log('udpLog', `✓ Plik wysłany: ${data.stats.bytes_sent || 0} B`, 'success');
+                                    } else {
+                                        log('udpLog', `✗ ${data.message}`, 'error');
+                                    }
+                                } catch (error) {
+                                    log('udpLog', `✗ Błąd: ${error.message}`, 'error');
+                                }
+                            };
+                            reader.readAsArrayBuffer(file);
+                        }
                     <div class="protocol-info">
                         <h4>Format ramki UDP (0xDEADBEEF)</h4>
                         <p>Nagłówek: 16B (Magic + Type + Length + CRC32 + PacketID + Total + Timestamp)</p>
@@ -472,6 +533,10 @@
 
                 <div class="card">
                     <h2>UDP Serwer</h2>
+                    <div class="form-group">
+                        <label>Host (use multicast group IP to join group, e.g. 239.255.0.1):</label>
+                        <input type="text" id="udpServerHost" value="0.0.0.0" placeholder="0.0.0.0 or 239.255.0.1">
+                    </div>
                     <div class="form-group">
                         <label>Port:</label>
                         <input type="number" id="udpServerPort" value="5001" min="1" max="65535">
@@ -640,6 +705,7 @@
         async function connectTCP() {
             const host = document.getElementById('tcpHost').value;
             const port = document.getElementById('tcpPort').value;
+            const auto_reconnect = document.getElementById('tcpAutoReconnect').checked;
 
             log('tcpLog', `Łączenie z ${host}:${port}...`, 'info');
 
@@ -647,7 +713,7 @@
                 const response = await fetch(`${API_BASE}/tcp-client/connect`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ host, port: parseInt(port) })
+                    body: JSON.stringify({ host, port: parseInt(port), auto_reconnect })
                 });
 
                 const data = await response.json();
@@ -786,6 +852,7 @@
 
         // ==================== UDP SERVER ====================
         async function startUDPServer() {
+            const host = document.getElementById('udpServerHost').value || '0.0.0.0';
             const port = parseInt(document.getElementById('udpServerPort').value);
 
             log('udpServerLog', 'Uruchamianie UDP Serwera...', 'info');
@@ -794,7 +861,7 @@
                 const response = await fetch(`${API_BASE}/udp-server/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ host: '0.0.0.0', port, buffer_size: 65535 })
+                    body: JSON.stringify({ host, port, buffer_size: 65535 })
                 });
 
                 const data = await response.json();

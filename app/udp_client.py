@@ -66,7 +66,6 @@ class UDPClient:
             ]
             
             total_chunks = len(chunks)
-            
             for idx, chunk in enumerate(chunks):
                 frame = CustomProtocol.build_udp_frame(
                     chunk,
@@ -74,7 +73,7 @@ class UDPClient:
                     total_packets=total_chunks,
                     packet_type=CustomProtocol.TYPE_AUDIO
                 )
-                
+
                 self.socket.sendto(frame, (self.host, self.port))
                 self.stats['bytes_sent'] += len(chunk)
                 self.stats['packets_sent'] += 1
@@ -83,6 +82,39 @@ class UDPClient:
             return True
         except Exception as e:
             logger.error(f"Błąd wysyłania danych binarnych UDP: {e}")
+            return False
+
+    def send_multicast(self, data: bytes, ttl: int = 1) -> bool:
+        """Wyślij dane na adres multicastowy (host powinien być multicast)"""
+        try:
+            # Set multicast TTL
+            try:
+                self.socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+            except Exception:
+                pass
+
+            chunk_size = 65500
+            chunks = [
+                data[i:i + chunk_size]
+                for i in range(0, len(data), chunk_size)
+            ]
+
+            total_chunks = len(chunks)
+            for idx, chunk in enumerate(chunks):
+                frame = CustomProtocol.build_udp_frame(
+                    chunk,
+                    packet_id=idx,
+                    total_packets=total_chunks,
+                    packet_type=CustomProtocol.TYPE_AUDIO
+                )
+                self.socket.sendto(frame, (self.host, self.port))
+                self.stats['bytes_sent'] += len(chunk)
+                self.stats['packets_sent'] += 1
+
+            logger.info(f"Wysłano (multicast) {len(data)} B w {total_chunks} pakietach UDP")
+            return True
+        except Exception as e:
+            logger.error(f"Błąd wysyłania multicast UDP: {e}")
             return False
     
     def close(self):

@@ -25,6 +25,33 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Dwa dodatkowe węzły (symulacja dwóch klientów w sieci dockerowej)
+  node1:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./app:/app
+    networks:
+      - docker-net
+    restart: unless-stopped
+
+  node2:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./app:/app
+    networks:
+      - docker-net
+    restart: unless-stopped
+
 networks:
   docker-net:
     driver: bridge

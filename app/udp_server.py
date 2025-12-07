@@ -5,6 +5,7 @@ udp_server.py - Serwer UDP
 import socket
 import threading
 import logging
+import ipaddress
 from typing import Dict
 from protocol import CustomProtocol
 
@@ -36,7 +37,21 @@ class UDPServer:
         try:
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_socket.bind((self.host, self.port))
+
+            # If host is multicast address, bind to all interfaces and join group
+            try:
+                is_multicast = ipaddress.ip_address(self.host).is_multicast
+            except Exception:
+                is_multicast = False
+
+            if is_multicast:
+                # Bind to all interfaces on the port to receive multicast
+                self.server_socket.bind(("", self.port))
+                mreq = socket.inet_aton(self.host) + socket.inet_aton('0.0.0.0')
+                self.server_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+                logger.info(f"UDP Serwer dołączył do grupy multicast {self.host}:{self.port}")
+            else:
+                self.server_socket.bind((self.host, self.port))
             self.running = True
             
             logger.info(f"UDP Serwer nasłuchuje na {self.host}:{self.port} (buffer: {self.buffer_size}B)")

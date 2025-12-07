@@ -187,11 +187,19 @@ def udp_client_send():
     host = data.get('host', CONFIG['tcp_client_host'])
     port = int(data.get('port', 5001))
     message = data.get('message', '')
+    mode = data.get('mode', 'unicast')
     
     if not udp_client or udp_client.host != host or udp_client.port != port:
         udp_client = UDPClient(host, port)
-    
-    success = udp_client.send_message(message)
+    # Choose unicast or multicast send
+    try:
+        message_bytes = message.encode('utf-8')
+        if mode == 'multicast':
+            success = udp_client.send_multicast(message_bytes)
+        else:
+            success = udp_client.send_message(message)
+    except Exception as e:
+        success = False
     
     if success:
         return jsonify({'success': True, 'message': 'Wysłano', 'stats': udp_client.get_stats()})
@@ -206,6 +214,7 @@ def udp_client_send_file():
     host = data.get('host', CONFIG['tcp_client_host'])
     port = int(data.get('port', 5001))
     file_base64 = data.get('file_data', '')
+    mode = data.get('mode', 'unicast')
     
     if not udp_client or udp_client.host != host or udp_client.port != port:
         udp_client = UDPClient(host, port)
@@ -213,7 +222,10 @@ def udp_client_send_file():
     import base64
     try:
         file_data = base64.b64decode(file_base64)
-        success = udp_client.send_binary(file_data)
+        if mode == 'multicast':
+            success = udp_client.send_multicast(file_data)
+        else:
+            success = udp_client.send_binary(file_data)
         
         if success:
             return jsonify({'success': True, 'message': 'Plik wysłany', 'stats': udp_client.get_stats()})
