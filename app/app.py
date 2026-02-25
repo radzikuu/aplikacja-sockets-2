@@ -132,18 +132,23 @@ def udp_server_stats():
 def tcp_client_connect():
     global tcp_client
     
-    data = request.json
-    host = data.get('host', CONFIG['tcp_client_host'])
-    port = int(data.get('port', CONFIG['tcp_client_port']))
-    auto_reconnect = data.get('auto_reconnect', CONFIG['tcp_client_auto_reconnect'])
-    
-    tcp_client = TCPClient(host, port, auto_reconnect)
-    success = tcp_client.connect()
-    
-    if success:
-        return jsonify({'success': True, 'message': f'Połączono z {host}:{port}'})
-    else:
-        return jsonify({'success': False, 'message': 'Błąd połączenia'}), 500
+    try:
+        data = request.json
+        host = data.get('host', CONFIG['tcp_client_host'])
+        port = int(data.get('port', CONFIG['tcp_client_port']))
+        auto_reconnect = data.get('auto_reconnect', CONFIG['tcp_client_auto_reconnect'])
+        
+        tcp_client = TCPClient(host, port, auto_reconnect)
+        success = tcp_client.connect()
+        
+        if success:
+            return jsonify({'success': True, 'message': f'Połączono z {host}:{port}'})
+        else:
+            logger.error(f"Nie udało się połączyć z {host}:{port} - serwer może nie być uruchomiony")
+            return jsonify({'success': False, 'message': f'Nie udało się połączyć z {host}:{port}. Upewnij się, że TCP Server jest uruchomiony.'}), 503
+    except Exception as e:
+        logger.error(f"Błąd w tcp_client_connect: {e}")
+        return jsonify({'success': False, 'message': f'Błąd serwera: {str(e)}'}), 500
 
 @app.route('/api/tcp-client/send', methods=['POST'])
 def tcp_client_send():

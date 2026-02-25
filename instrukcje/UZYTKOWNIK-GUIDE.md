@@ -588,6 +588,39 @@ Każda ramka zawiera **CRC32 (Cyclic Redundancy Check)** do weryfikacji integral
 
 ## Troubleshooting
 
+### Problem: ERR_UNSAFE_PORT - Nie mogę dostać się do port 6000
+
+**Symptomy:**
+```
+Ta witryna jest nieosiągalna
+Strona internetowa pod adresem http://localhost:6000/ może być tymczasowo niedostępna
+ERR_UNSAFE_PORT
+```
+
+**Wyjaśnienie:**
+Port 6000 jest **niebezpiecznym portem** zablokowanym przez przeglądarki. Dodatkowo port 6000 **nie jest HTTP serwerem** - to surowy serwer TCP z vlastnym protokołem, niedostępny bezpośrednio z przeglądarki.
+
+**Rozwiązanie - PRAWIDŁOWY WORKFLOW:**
+
+1. **Otwórz aplikację WebUI na porcie 5000:**
+   ```
+   http://localhost:5000  ✓ POPRAWNIE
+   http://localhost:6000  ✗ NIE DZIAŁA (blokada przeglądarki)
+   ```
+
+2. **Używaj aplikacji WebUI do kontroli serwerów:**
+   - **Karta "Serwer"** → Kliknij "Start" → TCP Server uruchomi się na porcie 6000
+   - **Karta "Klient"** → Połącz się z serwerem (port 6000 zostanie obsłużony przez aplikację)
+
+3. **Architektura portów:**
+   | Port | Typ | Dostęp | Użycie |
+   |------|-----|--------|--------|
+   | 5000 | HTTP (Flask) | ✓ Przeglądarka | WebUI |
+   | 6000 | TCP (Raw Socket) | ✗ Przeglądarka (blokada) | Serwer TCP |
+   | 5001 | UDP (Raw Socket) | ✗ Przeglądarka | Serwer UDP |
+
+---
+
 ### Problem: Port już w użyciu
 
 **Symptomy:**
